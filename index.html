@@ -686,6 +686,13 @@
                 sound.play().catch(e => console.error("Gagal memutar audio:", e.message));
             }
         }
+
+        // --- Vibration Logic ---
+        function vibrateOnError() {
+            if ('vibrate' in navigator) {
+                navigator.vibrate(200); // Getar selama 200 milidetik
+            }
+        }
         
         // --- UI Logic ---
         function showSpinner(show) {
@@ -901,7 +908,8 @@
                 }, 2000);
             } else {
                 playSound(sounds.incorrect);
-                memorizeAnswerResult.textContent = "Jawaban Salah!";
+                vibrateOnError();
+                memorizeAnswerResult.textContent = "Jawaban Salah, Kembali ke Login!";
                 memorizeAnswerResult.classList.add('incorrect');
                 memorizeCard.classList.add('incorrect', 'shake-anim');
                 setTimeout(() => {
@@ -1109,6 +1117,7 @@
                         setTimeout(() => showScreen('login'), 2000);
                     } else {
                         playSound(sounds.incorrect);
+                        vibrateOnError();
                         cardMessageIconContainer.innerHTML = failureIcon;
                         cardMessageTitle.textContent = "Jawaban Salah!";
                         cardMessageTitle.className = "text-3xl font-bold font-philosopher text-red-600 mb-2";
@@ -1254,6 +1263,7 @@
                         setTimeout(() => showScreen('login'), 2000);
                     } else {
                         playSound(sounds.incorrect);
+                        vibrateOnError();
                         messageIconContainer.innerHTML = failureIcon;
                         messageTitle.textContent = "Susunan Anda Salah!";
                         messageTitle.className = "text-3xl font-bold font-philosopher text-red-600 mb-2";
@@ -1363,7 +1373,8 @@
                 }, 2000);
             } else {
                 playSound(sounds.incorrect);
-                padlockAnswerResult.textContent = "Jawaban Salah!";
+                vibrateOnError();
+                padlockAnswerResult.textContent = "Jawaban Salah, Kembali ke Login!";
                 padlockAnswerResult.classList.add('incorrect');
                 padlockCard.classList.add('incorrect', 'shake-anim');
                 setTimeout(() => {
@@ -1479,5 +1490,4 @@
     </script>
 </body>
 </html>
-
 
