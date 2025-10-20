@@ -628,9 +628,9 @@
         </div>
     </div>
 
-    <audio id="correct-sound" src="https://fyyzfjooysfhasahnddc.supabase.co/storage/v1/object/public/Audio%20COB/benar.mp3" preload="auto"></audio>
-    <audio id="incorrect-sound" src="https://fyyzfjooysfhasahnddc.supabase.co/storage/v1/object/public/Audio%20COB/jawaban%20salah.mp3" preload="auto"></audio>
-    <audio id="touch-sound" src="https://fyyzfjooysfhasahnddc.supabase.co/storage/v1/object/public/Audio%20COB/sound%20touch.mp3" preload="auto"></audio>
+    <audio id="correct-sound" src="https://fyyzfjooysfhasahnddc.supabase.co/storage/v1/object/public/Audio%20COB/Audio/benar.mp3" preload="auto"></audio>
+    <audio id="incorrect-sound" src="https://fyyzfjooysfhasahnddc.supabase.co/storage/v1/object/public/Audio%20COB/Audio/jawaban%20salah.mp3" preload="auto"></audio>
+    <audio id="touch-sound" src="https://fyyzfjooysfhasahnddc.supabase.co/storage/v1/object/public/Audio%20COB/Audio/sound%20touch.mp3" preload="auto"></audio>
 
 
     <script>
@@ -892,12 +892,22 @@
             if (memorizeCorrectAnswer === null) return showPopup('Kunci jawaban belum siap.', 'error');
 
             const userAnswer = memorizeAnswerInput.value;
+            const isCorrect = userAnswer === String(memorizeCorrectAnswer);
+            
+            _supabase.from('game_activity').insert([{ 
+                user_id: currentUserData.user_id, 
+                nama_peserta: currentUserData.nama,
+                game_name: 'Memorize',
+                answer: userAnswer,
+                is_correct: isCorrect
+            }]).then();
+
             memorizeCard.classList.remove('correct', 'incorrect', 'shake-anim');
             memorizeAnswerResult.classList.remove('show', 'correct', 'incorrect');
             memorizeAnswerSubmitBtn.disabled = true;
             memorizeAnswerInput.disabled = true;
 
-            if (userAnswer === String(memorizeCorrectAnswer)) {
+            if (isCorrect) {
                 playSound(sounds.correct);
                 memorizeAnswerResult.textContent = "Jawaban Benar!";
                 memorizeAnswerResult.classList.add('correct');
@@ -1034,8 +1044,9 @@
 
                 const randomSet = setsData[Math.floor(Math.random() * setsData.length)];
                 
-                correctOrder = randomSet.urutan_jawaban.split(',').map(s => s.trim());
-                allCards = randomSet.semua_pilihan.split(',').map(s => s.trim());
+                correctOrder = (randomSet.urutan_jawaban || '').split(',').map(s => s.trim()).filter(Boolean);
+                const pengecoh = (randomSet.kata_pengecoh || '').split(',').map(s => s.trim()).filter(Boolean);
+                allCards = [...correctOrder, ...pengecoh];
                 let shuffledCards = [...allCards].sort(() => Math.random() - 0.5);
                 
                 cardGameBoard.innerHTML = '';
@@ -1103,6 +1114,15 @@
 
             function checkResult() {
                 const isCorrect = JSON.stringify(playerSequence) === JSON.stringify(correctOrder);
+                
+                _supabase.from('game_activity').insert([{ 
+                    user_id: currentUserData.user_id, 
+                    nama_peserta: currentUserData.nama,
+                    game_name: 'Card',
+                    answer: playerSequence.join(','),
+                    is_correct: isCorrect
+                }]).then();
+                
                 const successIcon = `<svg class="w-16 h-16 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
                 const failureIcon = `<svg class="w-16 h-16 text-red-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
 
@@ -1186,8 +1206,9 @@
                 
                 const randomSet = data[Math.floor(Math.random() * data.length)];
 
-                correctOrder = randomSet.urutan_jawaban.split(',').map(s => s.trim());
-                allKeys = randomSet.semua_pilihan.split(',').map(s => s.trim());
+                correctOrder = (randomSet.urutan_jawaban || '').split(',').map(s => s.trim()).filter(Boolean);
+                const pengecoh = (randomSet.kata_pengecoh || '').split(',').map(s => s.trim()).filter(Boolean);
+                allKeys = [...correctOrder, ...pengecoh];
             }
 
             function initializeGame() {
@@ -1248,6 +1269,15 @@
             
             function checkResult() {
                 const isCorrect = JSON.stringify(playerSequence) === JSON.stringify(correctOrder);
+
+                _supabase.from('game_activity').insert([{ 
+                    user_id: currentUserData.user_id, 
+                    nama_peserta: currentUserData.nama,
+                    game_name: 'Puzzle',
+                    answer: playerSequence.join(','),
+                    is_correct: isCorrect
+                }]).then();
+                
                 const successIcon = `<svg class="w-16 h-16 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
                 const failureIcon = `<svg class="w-16 h-16 text-red-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
 
@@ -1301,7 +1331,7 @@
         let padlockCorrectAnswer = null;
 
         async function fetchPadlockAnswer() {
-            if (!_supabase || !currentUserData) throw new Error("Data pengguna tidak ditemukan.");
+            if (!_supabase || !currentUserData) return "12345";
             try {
                 const jenjang = getJenjangKelas(currentUserData.kelas);
                 if (!jenjang) throw new Error("Jenjang kelas tidak valid.");
@@ -1357,12 +1387,22 @@
             if (padlockCorrectAnswer === null) return showPopup('Kunci jawaban belum siap.', 'error');
 
             const userAnswer = padlockAnswerInput.value;
+            const isCorrect = userAnswer === String(padlockCorrectAnswer);
+            
+            _supabase.from('game_activity').insert([{ 
+                user_id: currentUserData.user_id, 
+                nama_peserta: currentUserData.nama,
+                game_name: 'Padlock',
+                answer: userAnswer,
+                is_correct: isCorrect
+            }]).then();
+
             padlockCard.classList.remove('correct', 'incorrect', 'shake-anim');
             padlockAnswerResult.classList.remove('show', 'correct', 'incorrect');
             padlockAnswerSubmitBtn.disabled = true;
             padlockAnswerInput.disabled = true;
 
-            if (userAnswer === String(padlockCorrectAnswer)) {
+            if (isCorrect) {
                 playSound(sounds.correct);
                 padlockAnswerResult.textContent = "Jawaban Benar!";
                 padlockAnswerResult.classList.add('correct');
