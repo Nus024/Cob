@@ -701,11 +701,18 @@
         async function showScreen(screenName) {
             // Sembunyikan semua popup sebelum pindah layar
             document.querySelectorAll('#card-screen #message-box, #puzzle-screen #message-box, #padlock-screen #padlock-result').forEach(box => box.classList.remove('show'));
-            document.querySelector('#memorize-screen #memorize-result').classList.remove('show');
+            const memorizeResult = document.querySelector('#memorize-screen #memorize-result');
+            if(memorizeResult) memorizeResult.classList.remove('show');
+
 
             if (screenName === 'login') {
                 loginForm.reset();
                 currentUserData = null; 
+                // [FIX] Pastikan papan jawaban puzzle bersih saat kembali ke login
+                const puzzleAnswerBoard = document.querySelector('#puzzle-screen #answer-board');
+                if (puzzleAnswerBoard) {
+                    puzzleAnswerBoard.textContent = '';
+                }
             }
             
             Object.values(screens).forEach(screen => {
@@ -864,7 +871,7 @@
                 memorizeCard.classList.add('correct');
                 gameCompletionStatus.memorize = true;
                 setTimeout(() => {
-                    showScreen('menu');
+                    showScreen('login');
                 }, 2000);
             } else {
                 playSound(sounds.incorrect);
@@ -1078,7 +1085,7 @@
                         cardMessageTitle.className = "text-3xl font-bold font-philosopher text-green-600 mb-2";
                         cardMessageText.textContent = "Anda berhasil";
                         gameCompletionStatus.card = true;
-                        setTimeout(() => showScreen('menu'), 2000);
+                        setTimeout(() => showScreen('login'), 2000);
                     } else {
                         playSound(sounds.incorrect);
                         cardMessageIconContainer.innerHTML = failureIcon;
@@ -1228,10 +1235,10 @@
                         messageIconContainer.innerHTML = successIcon;
                         messageTitle.textContent = "Susunan Anda Benar!";
                         messageTitle.className = "text-3xl font-bold font-philosopher text-green-600 mb-2";
-                        messageText.textContent = "Anda berhasil, kembali ke menu...";
+                        messageText.textContent = "Anda berhasil";
                         gameCompletionStatus.puzzle = true;
                         messageBox.classList.add('show');
-                        setTimeout(() => showScreen('menu'), 2000);
+                        setTimeout(() => showScreen('login'), 2000);
                     } else {
                         playSound(sounds.incorrect);
                         messageIconContainer.innerHTML = failureIcon;
@@ -1328,7 +1335,7 @@
                 padlockCard.classList.add('correct');
                 gameCompletionStatus.padlock = true;
                 setTimeout(() => {
-                    showScreen('menu');
+                    showScreen('login');
                 }, 2000);
             } else {
                 playSound(sounds.incorrect);
