@@ -846,14 +846,15 @@
 
         async function fetchMemorizeAnswer() {
             if (!_supabase || !currentUserData) throw new Error("Data pengguna tidak ditemukan.");
+            
             const jenjang = getJenjangKelas(currentUserData.kelas);
              if (!jenjang) throw new Error("Jenjang kelas tidak valid.");
             
             try {
-                const { data, error } = await _supabase.from('konfigurasi').select('kunci_jawaban_memorize').eq('jenjang_kelas', jenjang).single();
+                const { data, error } = await _supabase.from('konfigurasi').select('kunci_jawaban_memorize').eq('jenjang_kelas', jenjang).eq('putaran', currentUserData.putaran).single();
                 if (error) throw error;
                 if (data && data.kunci_jawaban_memorize) return data.kunci_jawaban_memorize;
-                throw new Error(`Tidak ada kunci jawaban Memorize untuk jenjang ${jenjang}.`);
+                throw new Error(`Tidak ada kunci jawaban Memorize untuk jenjang ${jenjang} putaran ${currentUserData.putaran}.`);
             } catch (err) {
                 console.error("Error mengambil jawaban Memorize:", err.message);
                 throw err;
@@ -1015,7 +1016,10 @@
                 const jenjang = getJenjangKelas(currentUserData.kelas);
                 if (!jenjang) throw new Error("Jenjang kelas tidak valid.");
                 
-                const { data: setsData, error: setsError } = await _supabase.from('card_game_sets').select('*').eq('jenjang_kelas', jenjang);
+                const { data: setsData, error: setsError } = await _supabase
+                    .from('card_game_sets')
+                    .select('*')
+                    .eq('jenjang_kelas', jenjang);
 
                 if (setsError) throw setsError;
                 if (!setsData || setsData.length === 0) throw new Error(`Tidak ada set soal Card untuk jenjang kelas ${jenjang}.`);
@@ -1287,12 +1291,19 @@
         let padlockCorrectAnswer = null;
 
         async function fetchPadlockAnswer() {
-            if (!_supabase || !currentUserData) return "12345";
+            if (!_supabase || !currentUserData) throw new Error("Data pengguna tidak ditemukan.");
             try {
                 const jenjang = getJenjangKelas(currentUserData.kelas);
                 if (!jenjang) throw new Error("Jenjang kelas tidak valid.");
                 
-                const { data, error } = await _supabase.from('konfigurasi').select('kunci_jawaban_padlock').eq('jenjang_kelas', jenjang).single();
+                const { data, error } = await _supabase
+                    .from('konfigurasi')
+                    .select('kunci_jawaban_padlock')
+                    .eq('jenjang_kelas', jenjang)
+                    .not('kunci_jawaban_padlock', 'is', null)
+                    .limit(1)
+                    .single();
+
                 if (error) throw error;
                 if (data && data.kunci_jawaban_padlock) return data.kunci_jawaban_padlock;
                 throw new Error(`Tidak ada kunci jawaban Padlock untuk jenjang ${jenjang}.`);
