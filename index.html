@@ -769,6 +769,28 @@
                 }
             });
         }
+        
+        function getJenjangKelas(kelasStr) {
+            if (!kelasStr) return null; 
+
+            const isMTS = kelasStr.toUpperCase().includes('MTS');
+            const match = kelasStr.match(/(VI|V|IV|III|II|I)/i);
+            if (!match) return null;
+
+            const roman = match[0].toUpperCase();
+            let result = 0;
+            
+            const romanMap = { 'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6 };
+            result = romanMap[roman];
+            
+            if(!result) return null;
+
+            if (isMTS) {
+                return result + 6;
+            }
+            return result;
+        }
+
 
         // --- Login Logic ---
         loginForm.addEventListener('submit', async (e) => {
@@ -823,12 +845,15 @@
         let memorizeCorrectAnswer = null;
 
         async function fetchMemorizeAnswer() {
-            if (!_supabase) return "20242025";
+            if (!_supabase || !currentUserData) throw new Error("Data pengguna tidak ditemukan.");
+            const jenjang = getJenjangKelas(currentUserData.kelas);
+             if (!jenjang) throw new Error("Jenjang kelas tidak valid.");
+            
             try {
-                const { data, error } = await _supabase.from('konfigurasi').select('kunci_jawaban_memorize').eq('id', 1).single();
+                const { data, error } = await _supabase.from('konfigurasi').select('kunci_jawaban_memorize').eq('jenjang_kelas', jenjang).single();
                 if (error) throw error;
-                if (data) return data.kunci_jawaban_memorize;
-                return "20242025";
+                if (data && data.kunci_jawaban_memorize) return data.kunci_jawaban_memorize;
+                throw new Error(`Tidak ada kunci jawaban Memorize untuk jenjang ${jenjang}.`);
             } catch (err) {
                 console.error("Error mengambil jawaban Memorize:", err.message);
                 throw err;
@@ -849,7 +874,7 @@
                 memorizeAnswerInput.placeholder = "0";
                 memorizeAnswerInput.focus();
             } catch (error) {
-                showPopup('Gagal memuat kunci jawaban.', 'error');
+                showPopup(error.message, 'error');
                 memorizeAnswerInput.placeholder = "Error";
             }
         }
@@ -962,11 +987,11 @@
             await setupCardGame();
         }
 
-        function updateActiveSlot(currentIndex) {
-            if (!cardAnswerBoard) return;
+        function updateActiveSlot(currentIndex, board) {
+            if (!board) return;
             
-            for (let i = 0; i < cardAnswerBoard.children.length; i++) {
-                const slot = cardAnswerBoard.children[i];
+            for (let i = 0; i < board.children.length; i++) {
+                const slot = board.children[i];
                  if (i === currentIndex) {
                     slot.classList.add('animated-slot');
                 } else {
@@ -985,28 +1010,20 @@
             let playerSequence = [];
 
             try {
-                if (!_supabase) throw new Error("Supabase client tidak terinisialisasi.");
-
-                const { data: sets, error: setsError } = await _supabase.from('card_game_sets').select('set_id', { count: 'exact' });
-                if (setsError) throw setsError;
-                if (!sets || sets.length === 0) throw new Error("Tidak ada set soal yang ditemukan.");
-
-                const uniqueSetIds = [...new Set(sets.map(item => item.set_id))];
-                const randomSetId = uniqueSetIds[Math.floor(Math.random() * uniqueSetIds.length)];
-
-                const { data: cardsData, error: cardsError } = await _supabase.from('card_game_sets')
-                    .select('kata, urutan')
-                    .eq('set_id', randomSetId);
-
-                if (cardsError) throw cardsError;
-                if (!cardsData || cardsData.length === 0) throw new Error(`Tidak ada kata untuk set_id ${randomSetId}.`);
+                if (!_supabase || !currentUserData) throw new Error("Supabase client tidak terinisialisasi.");
                 
-                const correctCards = cardsData
-                    .filter(item => item.urutan !== null && item.urutan > 0)
-                    .sort((a, b) => a.urutan - b.urutan);
-                correctOrder = correctCards.map(item => item.kata);
+                const jenjang = getJenjangKelas(currentUserData.kelas);
+                if (!jenjang) throw new Error("Jenjang kelas tidak valid.");
+                
+                const { data: setsData, error: setsError } = await _supabase.from('card_game_sets').select('*').eq('jenjang_kelas', jenjang);
 
-                allCards = cardsData.map(card => card.kata);
+                if (setsError) throw setsError;
+                if (!setsData || setsData.length === 0) throw new Error(`Tidak ada set soal Card untuk jenjang kelas ${jenjang}.`);
+
+                const randomSet = setsData[Math.floor(Math.random() * setsData.length)];
+                
+                correctOrder = randomSet.urutan_jawaban.split(',').map(s => s.trim());
+                allCards = randomSet.semua_pilihan.split(',').map(s => s.trim());
                 let shuffledCards = [...allCards].sort(() => Math.random() - 0.5);
                 
                 cardGameBoard.innerHTML = '';
@@ -1022,7 +1039,7 @@
                     slot.classList.add('answer-slot');
                     cardAnswerBoard.appendChild(slot);
                 });
-                updateActiveSlot(0);
+                updateActiveSlot(0, cardAnswerBoard);
 
                 cardAnswerBoard.onclick = handleUndoClick;
 
@@ -1052,7 +1069,7 @@
                     nextSlot.appendChild(chosenCard);
                     nextSlot.classList.remove('animated-slot');
                 }
-                updateActiveSlot(playerSequence.length);
+                updateActiveSlot(playerSequence.length, cardAnswerBoard);
 
                 if (playerSequence.length === correctOrder.length) checkResult();
             }
@@ -1068,7 +1085,7 @@
                     clickedCard.parentElement.innerHTML = '';
                     const originalCard = cardGameBoard.querySelector(`.card[data-kata="${lastChosenKata}"]`);
                     if (originalCard) originalCard.classList.remove('is-chosen');
-                    updateActiveSlot(playerSequence.length);
+                    updateActiveSlot(playerSequence.length, cardAnswerBoard);
                 }
             }
 
@@ -1144,28 +1161,20 @@
             let playerSequence = [];
 
             async function fetchPuzzleData() {
-                if (!_supabase) throw new Error("Supabase client tidak terinisialisasi.");
+                if (!_supabase || !currentUserData) throw new Error("Data pengguna tidak ditemukan.");
+                
+                const jenjang = getJenjangKelas(currentUserData.kelas);
+                if (!jenjang) throw new Error("Jenjang kelas tidak valid.");
 
-                const { data: sets, error: setsError } = await _supabase.from('puzzle_game_sets').select('set_id');
-                if (setsError) throw setsError;
-                if (!sets || sets.length === 0) throw new Error("Tidak ada set soal yang ditemukan.");
+                const { data, error } = await _supabase.from('puzzle_game_sets').select('*').eq('jenjang_kelas', jenjang);
 
-                const uniqueSetIds = [...new Set(sets.map(item => item.set_id))];
-                const currentSetId = uniqueSetIds[Math.floor(Math.random() * uniqueSetIds.length)];
+                if (error) throw error;
+                if (!data || data.length === 0) throw new Error(`Tidak ada set soal Puzzle untuk jenjang kelas ${jenjang}.`);
+                
+                const randomSet = data[Math.floor(Math.random() * data.length)];
 
-                const { data: wordsData, error: wordsError } = await _supabase.from('puzzle_game_sets')
-                    .select('kata, urutan')
-                    .eq('set_id', currentSetId);
-
-                if (wordsError) throw wordsError;
-                if (!wordsData || wordsData.length === 0) throw new Error(`Tidak ada kata untuk set_id ${currentSetId}.`);
-
-                correctOrder = wordsData
-                    .filter(item => item.urutan !== null && item.urutan > 0)
-                    .sort((a, b) => a.urutan - b.urutan)
-                    .map(item => item.kata);
-
-                allKeys = wordsData.map(item => item.kata);
+                correctOrder = randomSet.urutan_jawaban.split(',').map(s => s.trim());
+                allKeys = randomSet.semua_pilihan.split(',').map(s => s.trim());
             }
 
             function initializeGame() {
@@ -1278,11 +1287,15 @@
         let padlockCorrectAnswer = null;
 
         async function fetchPadlockAnswer() {
-            if (!_supabase) return "12345"; // Fallback answer
+            if (!_supabase || !currentUserData) return "12345";
             try {
-                const { data, error } = await _supabase.from('konfigurasi').select('kunci_jawaban_padlock').eq('id', 1).single();
+                const jenjang = getJenjangKelas(currentUserData.kelas);
+                if (!jenjang) throw new Error("Jenjang kelas tidak valid.");
+                
+                const { data, error } = await _supabase.from('konfigurasi').select('kunci_jawaban_padlock').eq('jenjang_kelas', jenjang).single();
                 if (error) throw error;
-                return data ? data.kunci_jawaban_padlock : "12345";
+                if (data && data.kunci_jawaban_padlock) return data.kunci_jawaban_padlock;
+                throw new Error(`Tidak ada kunci jawaban Padlock untuk jenjang ${jenjang}.`);
             } catch (err) {
                 console.error("Error mengambil jawaban Padlock:", err.message);
                 throw err;
@@ -1313,7 +1326,7 @@
                 padlockAnswerInput.placeholder = "0";
                 padlockAnswerInput.focus();
             } catch (error) {
-                showPopup('Gagal memuat kunci jawaban.', 'error');
+                showPopup(error.message, 'error');
                 padlockAnswerInput.placeholder = "Error";
             }
         }
