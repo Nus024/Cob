@@ -274,76 +274,10 @@
         @keyframes blinking-text { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
         .animate-blinking { animation: blinking-text 0.5s ease-in-out 6; }
         
-        /* --- Custom Keyboard --- */
-        #custom-keyboard {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: none;
-            justify-content: space-between;
-            align-items: flex-start; /* Default alignment to TOP */
-            padding: 1rem;
-            padding-top: max(1rem, var(--safe-area-inset-top));
-            pointer-events: none;
-        }
-        .keyboard-side {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 0.5rem;
-            width: clamp(150px, 20vw, 190px); /* Smaller width */
-            pointer-events: auto;
-        }
-        .keyboard-key {
-            height: 40px; /* Smaller height */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.1rem; /* Smaller font */
-            font-weight: 600;
-            border-radius: 0.5rem;
-            background-color: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: all 0.15s ease-out;
-            color: #374151;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .keyboard-key:active {
-            transform: scale(0.95);
-            background-color: rgba(255, 255, 255, 1);
-        }
-        .key-special {
-            flex-direction: row;
-            gap: 0.5rem;
-            font-size: 0.9rem; /* Smaller font */
-        }
-        .key-span-2 { grid-column: span 2; }
-        .key-span-3 { grid-column: span 3; }
-        .key-span-6 { grid-column: span 6; }
-        .enter-key { background-color: rgba(59, 130, 246, 0.7); color: white; }
-        .enter-key:hover { background-color: rgba(37, 99, 235, 0.8); }
-        .bksp-key { background-color: rgba(239, 68, 68, 0.7); color: white; }
-        .bksp-key:hover { background-color: rgba(220, 38, 38, 0.8); }
-
         /* --- Aturan CSS Responsif --- */
-        @media (orientation: landscape) {
-            #custom-keyboard {
-                display: flex;
-                padding-left: max(1rem, var(--safe-area-inset-left));
-                padding-right: max(1rem, var(--safe-area-inset-right));
-            }
-            #login-form-container {
-                margin-top: 20vh; /* Add space from the top keyboard */
-                transition: margin-top 0.3s ease;
-            }
-        }
-
         @media (orientation: landscape) and (max-height: 500px) {
             .font-philosopher { font-size: 2rem; }
-            #login-screen #login-form-container, #memorize-screen .w-full.max-w-sm { padding: 1.25rem; }
+            #login-screen .w-full.max-w-sm, #memorize-screen .w-full.max-w-sm { padding: 1.25rem; }
             #loginForm { margin-top: 0.75rem; margin-bottom: 0.75rem; }
             #loginForm > :not([hidden]) ~ :not([hidden]) { margin-top: 0.75rem; margin-bottom: 0.75rem; }
             #menu-screen header, #card-screen header, #puzzle-screen header, #padlock-screen header { padding: 0.75rem 1rem; }
@@ -369,18 +303,18 @@
 
     <!-- Login Screen -->
     <div id="login-screen" class="relative z-10 w-full h-full flex items-center justify-center p-4 overflow-y-auto">
-        <div id="login-form-container" class="w-full max-w-sm bg-white/70 backdrop-blur-xl rounded-2xl shadow-2xl p-6 sm:p-8 animate-fade-in-up">
+        <div class="w-full max-w-sm bg-white/70 backdrop-blur-xl rounded-2xl shadow-2xl p-6 sm:p-8 animate-fade-in-up">
             <div class="text-center mb-6 sm:mb-8">
                 <h1 class="font-philosopher font-bold text-4xl sm:text-5xl" style="line-height: 1.1; color: #0069EA;">Clash Of Bakid</h1>
             </div>
             <form id="loginForm" class="space-y-5 sm:space-y-6" autocomplete="off" spellcheck="false">
                 <div>
                     <label for="id_user" class="text-sm font-medium text-gray-700">ID User</label>
-                    <input type="text" id="id_user" name="id_user" required pattern="[0-9]*" class="mt-1 block w-full px-4 py-3 bg-white/50 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 transition duration-150 ease-in-out focus-style text-base" />
+                    <input type="text" id="id_user" name="id_user" required inputmode="numeric" pattern="[0-9]*" class="mt-1 block w-full px-4 py-3 bg-white/50 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 transition duration-150 ease-in-out focus-style text-base" />
                 </div>
                 <div>
                     <label for="password" class="text-sm font-medium text-gray-700">Password</label>
-                    <input type="password" id="password" name="password" required pattern="[0-9]*" class="mt-1 block w-full px-4 py-3 bg-white/50 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 transition duration-150 ease-in-out focus-style text-base" />
+                    <input type="password" id="password" name="password" required inputmode="numeric" pattern="[0-9]*" class="mt-1 block w-full px-4 py-3 bg-white/50 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 transition duration-150 ease-in-out focus-style text-base" />
                     <div id="dotSpinner" class="dot-spinner" aria-hidden="true">
                         <div class="dot d1"></div>
                         <div class="dot d2"></div>
@@ -394,31 +328,6 @@
                 </div>
                 <div id="popupMini" class="popup-mini" role="status" aria-live="polite"></div>
             </form>
-        </div>
-        <!-- Custom Keyboard for Landscape -->
-        <div id="custom-keyboard">
-            <div class="keyboard-side">
-                <button type="button" data-key="enter" class="keyboard-key key-special enter-key key-span-6">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
-                    <span>Enter</span>
-                </button>
-                <button type="button" data-key="1" class="keyboard-key key-span-3">1</button>
-                <button type="button" data-key="2" class="keyboard-key key-span-3">2</button>
-                <button type="button" data-key="3" class="keyboard-key key-span-2">3</button>
-                <button type="button" data-key="4" class="keyboard-key key-span-2">4</button>
-                <button type="button" data-key="5" class="keyboard-key key-span-2">5</button>
-            </div>
-            <div class="keyboard-side">
-                <button type="button" data-key="bksp" class="keyboard-key key-special bksp-key key-span-6">
-                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg>
-                    <span>Hapus</span>
-                </button>
-                <button type="button" data-key="6" class="keyboard-key key-span-3">6</button>
-                <button type="button" data-key="7" class="keyboard-key key-span-3">7</button>
-                <button type="button" data-key="8" class="keyboard-key key-span-2">8</button>
-                <button type="button" data-key="9" class="keyboard-key key-span-2">9</button>
-                <button type="button" data-key="0" class="keyboard-key key-span-2">0</button>
-            </div>
         </div>
     </div>
     
@@ -698,6 +607,7 @@
                                  id="padlock_input"
                                  name="padlock_input"
                                  required
+                                 inputmode="numeric"
                                  pattern="[0-9]*"
                                  class="block w-full px-4 py-3 bg-white/50 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 transition duration-150 ease-in-out focus-style text-center text-3xl sm:text-4xl font-bold tracking-widest"
                                  placeholder="0"
@@ -890,70 +800,13 @@
 
 
         // --- Login Logic ---
-        const idUserInput = document.getElementById('id_user');
-        const passwordInput = document.getElementById('password');
-        const customKeyboard = document.getElementById('custom-keyboard');
-        let activeInput = null;
-
-        function handleOrientationChange() {
-            const isLandscape = window.matchMedia("(orientation: landscape)").matches;
-            const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-
-            if (isLandscape && isTouchDevice) {
-                // For landscape on touch devices, use custom keyboard
-                idUserInput.setAttribute('inputmode', 'none');
-                passwordInput.setAttribute('inputmode', 'none');
-                
-                // A little trick to prevent keyboard on already focused element when rotating
-                const currentActive = document.activeElement;
-                if (currentActive === idUserInput || currentActive === passwordInput) {
-                    currentActive.blur();
-                    setTimeout(() => currentActive.focus(), 50);
-                }
-            } else {
-                // For portrait or non-touch devices, use default keyboard
-                idUserInput.removeAttribute('inputmode');
-                passwordInput.removeAttribute('inputmode');
-                activeInput = null; 
-            }
-        }
-
-        idUserInput.addEventListener('click', () => activeInput = idUserInput);
-        passwordInput.addEventListener('click', () => activeInput = passwordInput);
-
-        customKeyboard.addEventListener('click', (e) => {
-            const target = e.target.closest('.keyboard-key');
-            if (!target) return;
-            
-            playSound(sounds.touch);
-            
-            if (!activeInput) {
-                 // If no input is focused, focus the first one by default
-                idUserInput.focus();
-                activeInput = idUserInput;
-            }
-            
-            const key = target.dataset.key;
-
-            if (key === 'bksp') {
-                activeInput.value = activeInput.value.slice(0, -1);
-            } else if (key === 'enter') {
-                btnSubmit.click();
-            } else { 
-                activeInput.value += key;
-            }
-        });
-
-        window.addEventListener('resize', handleOrientationChange);
-        handleOrientationChange();
-
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!_supabase) return showPopup('Koneksi Supabase gagal.', 'error');
             popupMini.classList.remove('show');
 
-            const idUser = idUserInput.value.trim();
-            const password = passwordInput.value.trim();
+            const idUser = document.getElementById('id_user').value.trim();
+            const password = document.getElementById('password').value.trim();
             if (!idUser || !password) return showPopup('Harap isi ID User dan Password.', 'error');
             
             showSpinner(true);
@@ -1605,12 +1458,7 @@
         
         function setupGlobalInteractions() {
             document.querySelectorAll('button').forEach(button => {
-                button.addEventListener('click', () => {
-                    // Hanya mainkan suara sentuhan jika bukan tombol keyboard kustom
-                    if (!button.classList.contains('keyboard-key')) {
-                        playSound(sounds.touch);
-                    }
-                });
+                button.addEventListener('click', () => playSound(sounds.touch));
             });
 
             document.getElementById('back-to-login').addEventListener('click', () => { showScreen('login'); });
@@ -1682,4 +1530,3 @@
     </script>
 </body>
 </html>
-
