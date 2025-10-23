@@ -651,6 +651,7 @@
         }
         
         let currentUserData = null;
+        let gameStartTime = null; // Variabel global untuk timer
         
         let gameCompletionStatus = {
             memorize: false,
@@ -733,6 +734,15 @@
             if (screenName === 'menu' || screenName === 'card' || screenName === 'memorize' || screenName === 'puzzle' || screenName === 'padlock') {
                 screens[screenName].classList.add('flex-col');
             }
+
+            // [PERUBAHAN] Mulai timer saat masuk layar game
+            if (['memorize', 'card', 'puzzle', 'padlock'].includes(screenName)) {
+                gameStartTime = Date.now();
+                console.log(`Timer dimulai untuk: ${screenName}`);
+            } else {
+                gameStartTime = null; // Reset timer jika bukan layar game
+            }
+            // [PERUBAHAN SELESAI]
 
             if (screenName === 'menu') {
                 updateMenuCards();
@@ -821,6 +831,9 @@
                     currentUserData = data;
                     // Reset status game saat login berhasil
                     gameCompletionStatus = { memorize: false, card: false, puzzle: false, padlock: false };
+
+                    // [PERUBAHAN] Menghapus semua logika 'participant_scores' dari sini.
+                    // Kita tidak perlu membuat baris per user lagi.
                     
                     showPopup('Login berhasil. Memuat menu...', 'success');
                     setTimeout(() => {
@@ -895,13 +908,36 @@
             const userAnswer = memorizeAnswerInput.value;
             const isCorrect = userAnswer === String(memorizeCorrectAnswer);
             
-            _supabase.from('game_activity').insert([{ 
-                user_id: currentUserData.user_id, 
-                nama_peserta: currentUserData.nama,
-                game_name: 'Memorize',
-                answer: userAnswer,
-                is_correct: isCorrect
-            }]).then();
+            // [PERUBAHAN DIMULAI] Menggunakan 'game_log' (Format Long)
+            if (gameStartTime) {
+                const timeTaken = (Date.now() - gameStartTime) / 1000; // Waktu dalam detik
+                
+                // Format Waktu Jakarta (WIB)
+                const timestamp = new Date().toLocaleString('id-ID', { 
+                    timeZone: 'Asia/Jakarta', 
+                    hour12: false, day: '2-digit', month: '2-digit', year: 'numeric', 
+                    hour: '2-digit', minute: '2-digit', second: '2-digit' 
+                });
+                
+                console.log(`Logging to game_log: Memorize, correct: ${isCorrect}`);
+                
+                // Mengirim log baru ke tabel 'game_log'
+                _supabase.from('game_log')
+                    .insert([{ 
+                        user_id: currentUserData.user_id,
+                        nama_peserta: currentUserData.nama, // Pastikan 'currentUserData.nama' benar
+                        game_name: 'Memorize',
+                        answer: userAnswer,
+                        time_taken: timeTaken,
+                        is_correct: isCorrect,
+                        submitted_at: timestamp
+                    }])
+                    .then(({ error }) => {
+                        if (error) console.error('Gagal insert ke game_log (Memorize):', error.message);
+                    });
+                gameStartTime = null; // Reset timer
+            }
+            // [PERUBAHAN SELESAI]
 
             memorizeCard.classList.remove('correct', 'incorrect', 'shake-anim');
             memorizeAnswerResult.classList.remove('show', 'correct', 'incorrect');
@@ -909,6 +945,7 @@
             memorizeAnswerInput.disabled = true;
 
             if (isCorrect) {
+                // [Logika Supabase DIHAPUS dari sini]
                 playSound(sounds.correct);
                 memorizeAnswerResult.textContent = "Jawaban Benar!";
                 memorizeAnswerResult.classList.add('correct');
@@ -1116,19 +1153,44 @@
             function checkResult() {
                 const isCorrect = JSON.stringify(playerSequence) === JSON.stringify(correctOrder);
                 
-                _supabase.from('game_activity').insert([{ 
-                    user_id: currentUserData.user_id, 
-                    nama_peserta: currentUserData.nama,
-                    game_name: 'Card',
-                    answer: playerSequence.join(','),
-                    is_correct: isCorrect
-                }]).then();
+                // [PERUBAHAN DIMULAI] Menggunakan 'game_log' (Format Long)
+                if (gameStartTime) {
+                    const timeTaken = (Date.now() - gameStartTime) / 1000; // Waktu dalam detik
+                    const userAnswer = playerSequence.join(','); // Gabungkan array jadi string
+                    
+                    // Format Waktu Jakarta (WIB)
+                    const timestamp = new Date().toLocaleString('id-ID', { 
+                        timeZone: 'Asia/Jakarta', 
+                        hour12: false, day: '2-digit', month: '2-digit', year: 'numeric', 
+                        hour: '2-digit', minute: '2-digit', second: '2-digit' 
+                    });
+
+                    console.log(`Logging to game_log: Card, correct: ${isCorrect}`);
+
+                    // Mengirim log baru ke tabel 'game_log'
+                    _supabase.from('game_log')
+                        .insert([{ 
+                            user_id: currentUserData.user_id,
+                            nama_peserta: currentUserData.nama, // Pastikan 'currentUserData.nama' benar
+                            game_name: 'Card',
+                            answer: userAnswer,
+                            time_taken: timeTaken,
+                            is_correct: isCorrect,
+                            submitted_at: timestamp
+                        }])
+                        .then(({ error }) => {
+                            if (error) console.error('Gagal insert ke game_log (Card):', error.message);
+                        });
+                    gameStartTime = null; // Reset timer
+                }
+                // [PERUBAHAN SELESAI]
                 
                 const successIcon = `<svg class="w-16 h-16 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
                 const failureIcon = `<svg class="w-16 h-16 text-red-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
 
                 setTimeout(() => {
                     if (isCorrect) {
+                        // [Logika Supabase DIHAPUS dari sini]
                         playSound(sounds.correct);
                         cardMessageIconContainer.innerHTML = successIcon;
                         cardMessageTitle.textContent = "Luar Biasa!";
@@ -1280,19 +1342,44 @@
             function checkResult() {
                 const isCorrect = JSON.stringify(playerSequence) === JSON.stringify(correctOrder);
 
-                _supabase.from('game_activity').insert([{ 
-                    user_id: currentUserData.user_id, 
-                    nama_peserta: currentUserData.nama,
-                    game_name: 'Puzzle',
-                    answer: playerSequence.join(','),
-                    is_correct: isCorrect
-                }]).then();
+                // [PERUBAHAN DIMULAI] Menggunakan 'game_log' (Format Long)
+                if (gameStartTime) {
+                    const timeTaken = (Date.now() - gameStartTime) / 1000; // Waktu dalam detik
+                    const userAnswer = playerSequence.join(','); // Gabungkan array jadi string
+
+                    // Format Waktu Jakarta (WIB)
+                    const timestamp = new Date().toLocaleString('id-ID', { 
+                        timeZone: 'Asia/Jakarta', 
+                        hour12: false, day: '2-digit', month: '2-digit', year: 'numeric', 
+                        hour: '2-digit', minute: '2-digit', second: '2-digit' 
+                    });
+                    
+                    console.log(`Logging to game_log: Puzzle, correct: ${isCorrect}`);
+                    
+                    // Mengirim log baru ke tabel 'game_log'
+                    _supabase.from('game_log')
+                        .insert([{ 
+                            user_id: currentUserData.user_id,
+                            nama_peserta: currentUserData.nama, // Pastikan 'currentUserData.nama' benar
+                            game_name: 'Puzzle',
+                            answer: userAnswer,
+                            time_taken: timeTaken,
+                            is_correct: isCorrect,
+                            submitted_at: timestamp
+                        }])
+                        .then(({ error }) => {
+                            if (error) console.error('Gagal insert ke game_log (Puzzle):', error.message);
+                        });
+                    gameStartTime = null; // Reset timer
+                }
+                // [PERUBAHAN SELESAI]
                 
                 const successIcon = `<svg class="w-16 h-16 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
                 const failureIcon = `<svg class="w-16 h-16 text-red-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
 
                 setTimeout(() => {
                     if (isCorrect) {
+                        // [Logika Supabase DIHAPUS dari sini]
                         playSound(sounds.correct);
                         messageIconContainer.innerHTML = successIcon;
                         messageTitle.textContent = "Susunan Anda Benar!";
@@ -1399,20 +1486,44 @@
             const userAnswer = padlockAnswerInput.value;
             const isCorrect = userAnswer === String(padlockCorrectAnswer);
             
-            _supabase.from('game_activity').insert([{ 
-                user_id: currentUserData.user_id, 
-                nama_peserta: currentUserData.nama,
-                game_name: 'Padlock',
-                answer: userAnswer,
-                is_correct: isCorrect
-            }]).then();
+            // [PERUBAHAN DIMULAI] Menggunakan 'game_log' (Format Long)
+            if (gameStartTime) {
+                const timeTaken = (Date.now() - gameStartTime) / 1000; // Waktu dalam detik
 
+                // Format Waktu Jakarta (WIB)
+                const timestamp = new Date().toLocaleString('id-ID', { 
+                    timeZone: 'Asia/Jakarta', 
+                    hour12: false, day: '2-digit', month: '2-digit', year: 'numeric', 
+                    hour: '2-digit', minute: '2-digit', second: '2-digit' 
+                });
+
+                console.log(`Logging to game_log: Padlock, correct: ${isCorrect}`);
+                
+                // Mengirim log baru ke tabel 'game_log'
+                _supabase.from('game_log')
+                    .insert([{ 
+                        user_id: currentUserData.user_id,
+                        nama_peserta: currentUserData.nama, // Pastikan 'currentUserData.nama' benar
+                        game_name: 'Padlock',
+                        answer: userAnswer,
+                        time_taken: timeTaken,
+                        is_correct: isCorrect,
+                        submitted_at: timestamp
+                    }])
+                    .then(({ error }) => {
+                        if (error) console.error('Gagal insert ke game_log (Padlock):', error.message);
+                    });
+                gameStartTime = null; // Reset timer
+            }
+            // [PERUBAHAN SELESAI]
+            
             padlockCard.classList.remove('correct', 'incorrect', 'shake-anim');
             padlockAnswerResult.classList.remove('show', 'correct', 'incorrect');
             padlockAnswerSubmitBtn.disabled = true;
             padlockAnswerInput.disabled = true;
 
             if (isCorrect) {
+                // [Logika Supabase DIHAPUS dari sini]
                 playSound(sounds.correct);
                 padlockAnswerResult.textContent = "Jawaban Benar!";
                 padlockAnswerResult.classList.add('correct');
@@ -1540,4 +1651,3 @@
     </script>
 </body>
 </html>
-
