@@ -233,8 +233,10 @@
             line-height: 1.6; display: block; overflow-y: auto; text-align: right; direction: rtl;
         }
         #puzzle-screen #game-board {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            /* display: grid; */
+            /* grid-template-columns: repeat(3, 1fr); */
+            display: flex; /* DIUBAH */
+            flex-direction: column; /* DITAMBAHKAN */
             gap: 8px;
             width: 90vw;
             max-width: 400px;
@@ -292,33 +294,6 @@
                 font-size: clamp(0.8rem, 3vh, 1rem);
             }
         }
-        /* --- FIX RESPONSIVE & SCROLL --- */
-
-/* 1️⃣ Cegah reload saat scroll ke atas (pull-to-refresh di mobile) */
-html, body {
-  overscroll-behavior-y: contain;
-}
-
-/* 2️⃣ Tetapkan layout menu agar tetap 4 kartu, responsif di semua HP */
-#menu-cards-container {
-  display: grid !important;
-  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-  gap: 0.75rem !important;
-}
-
-@media (max-width: 768px) {
-  #menu-cards-container {
-    grid-template-columns: repeat(4, 1fr) !important;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-  }
-  #menu-cards-container > div {
-    min-width: 45% !important;
-    scroll-snap-align: start;
-  }
-}
-
     </style>
 </head>
 <body class="w-screen h-screen overflow-hidden relative">
@@ -661,26 +636,6 @@ html, body {
 
 
     <script>
-        // --- Nonaktifkan pull-to-refresh di mobile tanpa ganggu scroll internal ---
-    let lastTouchY = 0;
-    let preventPullToRefresh = false;
-
-    window.addEventListener('touchstart', (e) => {
-    if (e.touches.length !== 1) return;
-    lastTouchY = e.touches[0].clientY;
-    preventPullToRefresh = window.scrollY === 0;
-    }, {passive: false});
-
-    window.addEventListener('touchmove', (e) => {
-    const touchY = e.touches[0].clientY;
-    const touchDiff = touchY - lastTouchY;
-    lastTouchY = touchY;
-    if (preventPullToRefresh && touchDiff > 0) {
-        e.preventDefault();
-        return false;
-    }
-    }, {passive: false});
-
     document.addEventListener('DOMContentLoaded', () => {
         // --- Konfigurasi Supabase ---
         const SUPABASE_URL = 'https://fyyzfjooysfhasahnddc.supabase.co'; 
@@ -1258,6 +1213,15 @@ html, body {
                 allKeys = [...correctOrder, ...pengecoh];
             }
 
+            // FUNGSI BARU UNTUK MEMBUAT TOMBOL
+            function createKeyButton(text, onClick, extraClass = '') {
+                 const keyButton = document.createElement('button');
+                 keyButton.className = `key-button font-arabic ${extraClass}`;
+                 keyButton.innerHTML = text; // Gunakan innerHTML untuk panah backspace
+                 keyButton.addEventListener('click', onClick);
+                 return keyButton;
+            }
+
             function initializeGame() {
                 let shuffledKeys = [...allKeys].sort(() => Math.random() - 0.5);
                 playerSequence = [];
@@ -1265,19 +1229,39 @@ html, body {
                 gameBoard.innerHTML = '';
                 answerBoard.textContent = '';
                 
-                shuffledKeys.forEach(word => {
-                    const keyButton = document.createElement('button');
-                    keyButton.className = 'key-button font-arabic';
-                    keyButton.textContent = word;
-                    keyButton.addEventListener('click', () => handleKeyPress(word));
-                    gameBoard.appendChild(keyButton);
+                // BUAT 3 BARIS KONTAINER
+                const row1 = document.createElement('div');
+                row1.className = 'grid grid-flow-col auto-cols-auto gap-2 overflow-x-auto p-1'; // DIUBAH
+                const row2 = document.createElement('div');
+                row2.className = 'grid grid-flow-col auto-cols-auto gap-2 overflow-x-auto p-1'; // DIUBAH
+                const row3 = document.createElement('div');
+                row3.className = 'grid grid-flow-col auto-cols-auto gap-2 overflow-x-auto p-1'; // DIUBAH
+
+                // BAGI TOMBOL KE 3 BARIS
+                const totalKeys = shuffledKeys.length;
+                // Hitung tombol per baris, untuk distribusi yang lebih merata
+                const keysPerRow1 = Math.ceil(totalKeys / 3);
+                const remainingKeys = totalKeys - keysPerRow1;
+                const keysPerRow2 = Math.ceil(remainingKeys / 2);
+                
+                shuffledKeys.forEach((word, index) => {
+                    const keyButton = createKeyButton(word, () => handleKeyPress(word));
+                    if (index < keysPerRow1) {
+                        row1.appendChild(keyButton);
+                    } else if (index < keysPerRow1 + keysPerRow2) {
+                        row2.appendChild(keyButton);
+                    } else {
+                        row3.appendChild(keyButton);
+                    }
                 });
 
-                const backspaceButton = document.createElement('button');
-                backspaceButton.className = 'key-button backspace-key';
-                backspaceButton.innerHTML = `&larr;`;
-                backspaceButton.addEventListener('click', handleBackspace);
-                gameBoard.appendChild(backspaceButton);
+                // TAMBAHKAN TOMBOL BACKSPACE KE BARIS TERAKHIR
+                const backspaceButton = createKeyButton('&larr;', handleBackspace, 'backspace-key');
+                row3.appendChild(backspaceButton);
+                
+                gameBoard.appendChild(row1);
+                gameBoard.appendChild(row2);
+                gameBoard.appendChild(row3);
             }
             
             function updateAnswerDisplay() {
@@ -1577,3 +1561,5 @@ html, body {
     </script>
 </body>
 </html>
+
+
