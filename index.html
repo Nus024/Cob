@@ -235,8 +235,8 @@
         }
         #puzzle-screen #game-board {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
+            /* grid-template-columns: repeat(3, 1fr); <-- DIHAPUS, akan di-set oleh JS */
+            gap: 6px; /* DIUBAH dari 8px agar lebih muat */
             width: 90vw;
             max-width: 400px;
             margin: 0 auto;
@@ -246,9 +246,9 @@
             background: linear-gradient(145deg, #0069EA, #0058c2);
             border: none;
             border-radius: 8px;
-            padding: 14px 5px;
+            padding: 10px 4px; /* DIUBAH dari 14px 5px agar lebih ramping */
             box-shadow: 0 4px 10px rgba(0, 88, 194, 0.3), inset 0 1px 1px rgba(255,255,255,0.2);
-            font-size: clamp(1rem, 4vw, 1.2rem);
+            font-size: clamp(0.85rem, 3.5vw, 1.1rem); /* DIUBAH agar font sedikit lebih kecil */
             color: white;
             transition: all 0.15s ease-out;
         }
@@ -633,7 +633,7 @@
     <audio id="incorrect-sound" src="https://fyyzfjooysfhasahnddc.supabase.co/storage/v1/object/public/Audio%20COB/Audio/jawaban%20salah.mp3" preload="metadata"></audio>
     <audio id="touch-sound" src="https://fyyzfjooysfhasahnddc.supabase.co/storage/v1/object/public/Audio%20COB/Audio/sound%20touch.mp3" preload="metadata"></audio>
 
-
+<!-- ... (sisa kode HTML) ... -->
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         // --- Konfigurasi Supabase ---
@@ -1216,6 +1216,15 @@
                 let shuffledKeys = [...allKeys].sort(() => Math.random() - 0.5);
                 playerSequence = [];
 
+                // --- [PERUBAHAN DIMULAI] ---
+                // Hitung jumlah kolom yang dibutuhkan secara dinamis
+                const totalItems = allKeys.length + 1; // +1 untuk tombol backspace
+                const columnCount = Math.ceil(totalItems / 3); // Paksa jadi 3 baris
+                
+                // Set style grid secara dinamis via JavaScript
+                gameBoard.style.gridTemplateColumns = `repeat(${columnCount}, 1fr)`;
+                // --- [PERUBAHAN SELESAI] ---
+
                 gameBoard.innerHTML = '';
                 answerBoard.textContent = '';
                 
@@ -1531,3 +1540,4 @@
     </script>
 </body>
 </html>
+
