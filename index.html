@@ -292,6 +292,33 @@
                 font-size: clamp(0.8rem, 3vh, 1rem);
             }
         }
+        /* --- FIX RESPONSIVE & SCROLL --- */
+
+/* 1️⃣ Cegah reload saat scroll ke atas (pull-to-refresh di mobile) */
+html, body {
+  overscroll-behavior-y: contain;
+}
+
+/* 2️⃣ Tetapkan layout menu agar tetap 4 kartu, responsif di semua HP */
+#menu-cards-container {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 0.75rem !important;
+}
+
+@media (max-width: 768px) {
+  #menu-cards-container {
+    grid-template-columns: repeat(4, 1fr) !important;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+  #menu-cards-container > div {
+    min-width: 45% !important;
+    scroll-snap-align: start;
+  }
+}
+
     </style>
 </head>
 <body class="w-screen h-screen overflow-hidden relative">
@@ -634,6 +661,26 @@
 
 
     <script>
+        // --- Nonaktifkan pull-to-refresh di mobile tanpa ganggu scroll internal ---
+    let lastTouchY = 0;
+    let preventPullToRefresh = false;
+
+    window.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) return;
+    lastTouchY = e.touches[0].clientY;
+    preventPullToRefresh = window.scrollY === 0;
+    }, {passive: false});
+
+    window.addEventListener('touchmove', (e) => {
+    const touchY = e.touches[0].clientY;
+    const touchDiff = touchY - lastTouchY;
+    lastTouchY = touchY;
+    if (preventPullToRefresh && touchDiff > 0) {
+        e.preventDefault();
+        return false;
+    }
+    }, {passive: false});
+
     document.addEventListener('DOMContentLoaded', () => {
         // --- Konfigurasi Supabase ---
         const SUPABASE_URL = 'https://fyyzfjooysfhasahnddc.supabase.co'; 
